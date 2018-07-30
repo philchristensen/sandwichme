@@ -1,0 +1,55 @@
+service: sandwichme
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: dev
+  region: us-east-1
+  memorySize: 128
+  environment:
+    STAGE: "${opt:stage, 'dev'}"
+    URL: "https://${self:custom.domainName.${opt:stage, 'dev'}}"
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:ListBucket"
+      Resource: "arn:aws:s3:::sandwichme.bubblehouse.org"
+package:
+  exclude:
+    - node_modules/**
+    - lobot/test/**
+    - bin/**
+    - .git/**
+custom:
+  domainName:
+    dev: sandwichme.bubblehouse.org
+  customDomain:
+    domainName: ${self:custom.domainName.${opt:stage, 'dev'}}
+    basePath: ''
+    stage: ${opt:stage, 'dev'}
+    createRoute53Record: true
+    endpointType: regional
+  pythonRequirements:
+    noDeploy:
+      - pylint
+      - pbr
+      - boto3
+      - botocore
+      - nose
+      - freezegun
+      - mock
+      - requests-mock
+      - moto
+      - coverage
+functions:
+  random:
+    handler: handler.random_sandwich
+    events:
+      - http:
+          method: GET
+          path: random
+plugins:
+  - serverless-pseudo-parameters
+  - serverless-python-requirements
+  - serverless-domain-manager
+
